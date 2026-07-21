@@ -118,25 +118,36 @@
         if (!email) return;
         btn.disabled = true;
         btn.textContent = 'Sending…';
-        fetch('https://formsubmit.co/ajax/support@gridline.lol', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-          body: JSON.stringify({
-            email: email,
-            _subject: 'Gridline early access request',
-            _template: 'table'
-          })
-        }).then(function (r) { return r.json(); }).then(function () {
+
+        function ok() {
           form.hidden = true;
           status.hidden = false;
           status.textContent = "Thanks — you're on the list. We'll reach out about your beta invite.";
-        }).catch(function () {
+        }
+        function fail() {
           btn.disabled = false;
           btn.textContent = 'Request early access';
           status.hidden = false;
           status.style.color = 'var(--muted)';
           status.innerHTML = 'Couldn’t submit just now — email <a style="color:var(--accent)" href="mailto:support@gridline.lol?subject=Gridline%20early%20access">support@gridline.lol</a> directly.';
-        });
+        }
+
+        // FormData avoids the JSON-content-type CORS preflight (a "simple"
+        // request); the AbortController guarantees the button never hangs.
+        var ctrl = new AbortController();
+        var timer = setTimeout(function () { ctrl.abort(); }, 15000);
+        var body = new FormData();
+        body.append('email', email);
+        body.append('_subject', 'Gridline early access request');
+        body.append('_template', 'table');
+
+        fetch('https://formsubmit.co/ajax/support@gridline.lol', {
+          method: 'POST', headers: { 'Accept': 'application/json' },
+          body: body, signal: ctrl.signal
+        })
+          .then(function (r) { return r.ok ? r : Promise.reject(r); })
+          .then(function () { clearTimeout(timer); ok(); })
+          .catch(function () { clearTimeout(timer); fail(); });
       });
     })();
   </script>
