@@ -120,7 +120,7 @@
         btn.textContent = 'Sending…';
 
         function ok() {
-          form.hidden = true;
+          form.style.display = 'none'; // .cta-form's display:flex overrides [hidden]
           status.hidden = false;
           status.textContent = "Thanks — you're on the list. We'll reach out about your beta invite.";
         }
